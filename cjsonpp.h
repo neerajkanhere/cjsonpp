@@ -1,10 +1,6 @@
 #ifndef CJSONPP_H
 #define CJSONPP_H
 
-#if defined(__GXX_EXPERIMENTAL_CXX0X__) || (__cplusplus >= 201103L)
-#define WITH_CPP11
-#endif
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -13,16 +9,8 @@
 #include <set>
 #include <ostream>
 #include <vector>
-
-#ifdef WITH_CPP11
 #include <memory>
 #include <initializer_list>
-#define _SHARED_PTR_IMPL std::shared_ptr
-#else
-#include <tr1/memory>
-#define _SHARED_PTR_IMPL std::tr1::shared_ptr
-#endif
-
 #include "cJSON.h"
 
 namespace cjsonpp {
@@ -69,10 +57,10 @@ class JSONObject
 		Holder& operator=(const Holder&);
 	};
 
-	typedef _SHARED_PTR_IMPL<Holder> HolderPtr;
+	typedef std::shared_ptr<Holder> HolderPtr;
 
 	typedef std::set<JSONObject> ObjectSet;
-	typedef _SHARED_PTR_IMPL<ObjectSet> ObjectSetPtr;
+	typedef std::shared_ptr<ObjectSet> ObjectSetPtr;
 
 	// get value (specialized below)
 	template <typename T>
@@ -169,13 +157,8 @@ public:
 	}
 
 	// create array object
-#ifdef WITH_CPP11
 	template <typename T,
 			  template<typename X, typename A> class ContT=std::vector>
-#else
-	template <typename T,
-			  template<typename X, typename A> class ContT>
-#endif
 	explicit JSONObject(const ContT<T, std::allocator<T> >& elems)
 		: obj_(new Holder(cJSON_CreateArray(), true)),
 		  refs_(new ObjectSet)
@@ -184,7 +167,7 @@ public:
 			 it != elems.end(); it++)
 			add(*it);
 	}
-#ifdef WITH_CPP11
+
 	template <typename T>
 	JSONObject(const std::initializer_list<T>& elems)
 		: obj_(new Holder(cJSON_CreateArray(), true)),
@@ -193,7 +176,7 @@ public:
 		for (auto& it: elems)
 			add(it);
 	}
-#endif
+
 	// for Qt-style containers
 	template <typename T,
 			  template<typename X> class ContT>
@@ -239,12 +222,8 @@ public:
 	}
 
 	// get array
-#ifdef WITH_CPP11
 	template <typename T=JSONObject,
 			  template<typename X, typename A> class ContT=std::vector>
-#else
-	template <typename T, template<typename X, typename A> class ContT>
-#endif
 	inline ContT<T, std::allocator<T> > asArray() const
 	{
 		if (((*obj_)->type & 0xff) != cJSON_Array)
@@ -272,11 +251,7 @@ public:
 	}
 
 	// get object by name
-#ifdef WITH_CPP11
 	template <typename T=JSONObject>
-#else
-	template <typename T>
-#endif
 	inline T get(const char* name) const
 	{
 		if (((*obj_)->type & 0xff) != cJSON_Object)
@@ -289,11 +264,7 @@ public:
 			throw JSONError("No such item");
 	}
 
-#ifdef WITH_CPP11
 	template <typename T=JSONObject>
-#else
-	template <typename T>
-#endif
 	inline JSONObject get(const std::string& value) const
 	{
 		return get<T>(value.c_str());
@@ -310,11 +281,7 @@ public:
 	}
 
 	// get value from array
-#ifdef WITH_CPP11
 	template <typename T=JSONObject>
-#else
-	template <typename T>
-#endif
 	inline T get(int index) const
 	{
 		if (((*obj_)->type & 0xff) != cJSON_Array)
